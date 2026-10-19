@@ -44,6 +44,10 @@ on:
         options:
           - 'yes'
           - 'no'
+      extra_packages:
+        description: "额外软件包(空格分隔, 例如: htop curl bash)"
+        required: false
+        default: "kmod-dm htop fdisk sshpass hdparm tcpdump-mini lsof lsblk parted rsync kmod-tun iperf3 kmod-fs-ext4 kmod-usb-storage unzip smartmontools luci-compat"
       enable_pppoe:
         description: "是否配置PPPoE拨号信息?"
         required: true
@@ -129,6 +133,7 @@ jobs:
             -v "${{ github.workspace }}/x86-64/build24.sh:/home/build/immortalwrt/build.sh" \
             -e PROFILE=$ROOTFS_SIZE \
             -e INCLUDE_DOCKER=$include_docker \
+            -e EXTRA_PACKAGES="${{ inputs.extra_packages }}" \
             -e ENABLE_PPPOE=${{ inputs.enable_pppoe }} \
             -e PPPOE_ACCOUNT=${{ inputs.pppoe_account }} \
             -e PPPOE_PASSWORD=${{ inputs.pppoe_password }} \
