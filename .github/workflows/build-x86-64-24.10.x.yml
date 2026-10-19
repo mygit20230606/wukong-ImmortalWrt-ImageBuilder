@@ -47,7 +47,7 @@ on:
       extra_packages:
         description: "额外软件包(空格分隔, 例如: htop curl bash)"
         required: false
-        default: "kmod-dm htop fdisk sshpass hdparm tcpdump-mini lsof lsblk parted rsync kmod-tun iperf3 kmod-fs-ext4 kmod-usb-storage unzip smartmontools luci-compat"
+        default: "bash kmod-dm htop fdisk sshpass hdparm tcpdump-mini lsof lsblk parted rsync kmod-tun iperf3 kmod-fs-ext4 kmod-usb-storage unzip smartmontools luci-compat"
       enable_pppoe:
         description: "是否配置PPPoE拨号信息?"
         required: true
