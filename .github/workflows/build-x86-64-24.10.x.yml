@@ -132,7 +132,8 @@ jobs:
 
       - name: Create info
         run: |
-          echo "RELEASE_TAG=x86-64-${{ github.event.inputs.profile }}-$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+          # release 标签 = 机型 + 时间戳, 避免同一天多次编译互相覆盖
+          echo "RELEASE_TAG=x86-64-$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           cat > ${{ github.workspace }}/router-info.md <<EOF
           ## 📡 路由器后台信息
           <a href="https://wkdaily.cpolar.cn/archives/1">

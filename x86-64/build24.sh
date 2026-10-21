@@ -55,7 +55,7 @@ PACKAGES="$PACKAGES luci-theme-argon"
 #24.10
 PACKAGES="$PACKAGES luci-i18n-package-manager-zh-cn"
 #PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
-PACKAGES="$PACKAGES openssh-sftp-server"
+PACKAGES="$PACKAGES openssh-sftp-server htop curl bash fdisk sshpass hdparm tcpdump-mini lsof lsblk parted rsync kmod-tun iperf3 kmod-fs-ext4 kmod-usb-storage unzip smartmontools luci-compat"
 # 额外软件包 由 workflow 的 extra_packages 输入框传入
 PACKAGES="$PACKAGES $EXTRA_PACKAGES"
 
