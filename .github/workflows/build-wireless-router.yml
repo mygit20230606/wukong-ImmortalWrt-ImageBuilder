@@ -484,7 +484,7 @@ on:
           - netgear_r8000
           - smartrg_sr400ac
           - tenda_ac9
-        default: glinet_gl-mt6000
+        default: cmcc_rax3000m
       enable_store:
         description: "集成 store 商店"
         required: false
@@ -494,7 +494,7 @@ on:
         description: |
           是否编译 Docker 插件
         required: true
-        default: 'no'
+        default: 'yes'
         type: choice
         options:
           - 'yes'
