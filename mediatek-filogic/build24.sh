@@ -100,6 +100,8 @@ fi
 # 构建镜像
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Building image with the following packages:"
 echo "$PACKAGES"
+# 输出最终软件包列表到宿主机 bin 目录 供 workflow 写入 release 说明
+echo "$PACKAGES" > /home/build/immortalwrt/bin/final-packages.txt
 
 make image PROFILE=$PROFILE PACKAGES="$PACKAGES" #FILES="/home/build/immortalwrt/files" 传入首次执行脚本 我不需要
 

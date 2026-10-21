@@ -631,7 +631,7 @@ jobs:
             esac
 
             # release 标签 = 机型 + 时间戳, 避免同一天多次编译互相覆盖
-            echo "RELEASE_TAG=$profile-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+            echo "RELEASE_TAG=$profile-$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           
             docker run --rm -i \
               --user root \
@@ -661,7 +661,7 @@ jobs:
           - 🔑 **密码**: 无
           EOF
 
-          echo -e "\n#### 软件包\n${{ inputs.extra_packages }}" >> ${{ github.workspace }}/router-info.md
+          echo -e "\n#### 软件包\n$(cat ${{ github.workspace }}/bin/final-packages.txt)" >> ${{ github.workspace }}/router-info.md
           
           
       - name: Upload ImmortalWrt as release assets

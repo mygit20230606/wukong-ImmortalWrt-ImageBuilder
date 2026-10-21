@@ -132,7 +132,7 @@ jobs:
 
       - name: Create info
         run: |
-          echo "RELEASE_TAG=x86-64-${{ github.event.inputs.profile }}-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+          echo "RELEASE_TAG=x86-64-${{ github.event.inputs.profile }}-$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           cat > ${{ github.workspace }}/router-info.md <<EOF
           ## 📡 路由器后台信息
           <a href="https://wkdaily.cpolar.cn/archives/1">
@@ -143,7 +143,7 @@ jobs:
           - 🔑 **密码**: 无
           EOF
 
-          echo -e "\n#### 软件包\n${{ inputs.extra_packages }}" >> ${{ github.workspace }}/router-info.md
+          echo -e "\n#### 软件包\n$(cat ${{ github.workspace }}/bin/final-packages.txt)" >> ${{ github.workspace }}/router-info.md
 
       - name: Upload ImmortWrt as release assets
         uses: softprops/action-gh-release@v3
