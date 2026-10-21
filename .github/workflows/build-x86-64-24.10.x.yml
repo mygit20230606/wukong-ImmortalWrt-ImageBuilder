@@ -20,7 +20,7 @@ on:
         description: '选择软件包空间大小'
         required: true
         type: choice
-        default: '1G'
+        default: '2G'
         options:
           - '1G'
           - '2G'
@@ -150,7 +150,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: x86-64-${{ env.profile }}
+          name: ${{ env.RELEASE_TAG }}
           body_path: ${{ github.workspace }}/router-info.md
           files: |
             ${{ github.workspace }}/bin/targets/x86/64/*squashfs-combined-efi.img.gz
