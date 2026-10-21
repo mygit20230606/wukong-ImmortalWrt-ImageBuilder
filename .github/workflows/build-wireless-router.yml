@@ -485,10 +485,6 @@ on:
           - smartrg_sr400ac
           - tenda_ac9
         default: glinet_gl-mt6000
-      custom_router_ip:
-        description: "请设置路由器的管理地址 格式:192.168.x.1 或 10.x.x.1"
-        required: true
-        default: "192.168.100.1"
       enable_store:
         description: "集成 store 商店"
         required: false
@@ -503,6 +499,10 @@ on:
         options:
           - 'yes'
           - 'no'
+      extra_packages:
+        description: "额外软件包"
+        required: false
+        default: "kmod-dm"
       enable_pppoe:
         description: "是否配置PPPoE拨号信息?"
         required: true
@@ -533,13 +533,6 @@ jobs:
       - name: Set executable permissions
         run: |
           chmod +x ${{ github.workspace }}/mediatek-filogic/build24.sh
-      
-      - name: Save Custom Router IP into OpenWrt files
-        run: |
-          mkdir -p "${{ github.workspace }}/custom"
-          echo "${{ github.event.inputs.custom_router_ip }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
-          echo "您设置的路由器管理地址是:${{ github.event.inputs.custom_router_ip }}"
-          # 后续步骤会将该文件映射到路由器/etc/config/custom_router_ip.txt 以便用于开机脚本99-custom.sh读取用户设置的ip
 
 
       - name: Validate PPPoE Inputs
@@ -636,6 +629,9 @@ jobs:
                   fi
                   ;;
             esac
+
+            # release 标签 = 机型 + 时间戳, 避免同一天多次编译互相覆盖
+            echo "RELEASE_TAG=$profile-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           
             docker run --rm -i \
               --user root \
@@ -647,6 +643,7 @@ jobs:
               -v "${{ github.workspace }}/mediatek-filogic/build24.sh:/home/build/immortalwrt/build.sh" \
               -e PROFILE=$profile \
               -e INCLUDE_DOCKER=$include_docker \
+              -e EXTRA_PACKAGES="${{ inputs.extra_packages }}" \
               -e ENABLE_PPPOE=${{ inputs.enable_pppoe }} \
               -e PPPOE_ACCOUNT=${{ inputs.pppoe_account }} \
               -e PPPOE_PASSWORD=${{ inputs.pppoe_password }} \
@@ -655,23 +652,24 @@ jobs:
 
       - name: Create info
         run: |
-          if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
-            extra_content="### 默认带docker"
-            echo -e "\n $extra_content" >> ${{ github.workspace }}/mediatek-filogic/info.md
-          else
-            echo -e "NO docker"
-          fi
-          custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
-          extra_content_ip="#### 管理地址 $custom_router_ip"
-          echo -e "\n $extra_content_ip" >> ${{ github.workspace }}/mediatek-filogic/info.md
+          cat > ${{ github.workspace }}/router-info.md <<EOF
+          ## 📡 路由器后台信息
+          <a href="https://wkdaily.cpolar.cn/archives/1">
+           <img src="https://img.shields.io/badge/若下载慢可套用国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge"/>
+          </a>
+          - 👤 **用户名**: root
+          - 🔑 **密码**: 无
+          EOF
+
+          echo -e "\n#### 软件包\n${{ inputs.extra_packages }}" >> ${{ github.workspace }}/router-info.md
           
           
       - name: Upload ImmortalWrt as release assets
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.inputs.profile }}
-          name: ImmortalWrt-Wireless
-          body_path: ${{ github.workspace }}/mediatek-filogic/info.md
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.profile }}
+          body_path: ${{ github.workspace }}/router-info.md
           files: |
             ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
           token: ${{ secrets.GITHUB_TOKEN }}

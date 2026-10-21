@@ -16,10 +16,6 @@ on:
           - 24.10.4
           - 24.10.5
           - 24.10.6
-      custom_router_ip:
-        description: "请设置路由器的管理地址(仅对多网口路由器有效) 格式:192.168.x.1 或 10.x.x.1"
-        required: true
-        default: "192.168.100.1"
       profile:
         description: '选择软件包空间大小'
         required: true
@@ -47,7 +43,7 @@ on:
       extra_packages:
         description: "额外软件包(空格分隔, 例如: htop curl bash)"
         required: false
-        default: "bash kmod-dm htop fdisk sshpass hdparm tcpdump-mini lsof lsblk parted rsync kmod-tun iperf3 kmod-fs-ext4 kmod-usb-storage unzip smartmontools luci-compat"
+        default: "kmod-dm"
       enable_pppoe:
         description: "是否配置PPPoE拨号信息?"
         required: true
@@ -77,12 +73,6 @@ jobs:
       - name: Set executable permissions
         run: chmod +x ${{ github.workspace }}/x86-64/build24.sh
 
-      - name: Save Custom Router IP into OpenWrt files
-        run: |
-          mkdir -p "${{ github.workspace }}/custom"
-          echo "${{ github.event.inputs.custom_router_ip }}" > "${{ github.workspace }}/custom/custom_router_ip.txt"
-          echo "您设置的路由器管理地址是:${{ github.event.inputs.custom_router_ip }}"
-          # 后续步骤会将该文件映射到路由器/etc/config/custom_router_ip.txt 以便用于开机脚本99-custom.sh读取用户设置的ip
       
       - name: Validate PPPoE Inputs
         run: |
@@ -142,28 +132,24 @@ jobs:
 
       - name: Create info
         run: |
+          echo "RELEASE_TAG=x86-64-${{ github.event.inputs.profile }}-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           cat > ${{ github.workspace }}/router-info.md <<EOF
           ## 📡 路由器后台信息
           <a href="https://wkdaily.cpolar.cn/archives/1">
            <img src="https://img.shields.io/badge/若下载慢可套用国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge"/>
           </a>
           
-          - 🏠 **后台地址**: ${{ github.event.inputs.custom_router_ip }}
           - 👤 **用户名**: root
           - 🔑 **密码**: 无
           EOF
 
-          if [ "${{ github.event.inputs.include_docker }}" == "yes" ]; then
-            extra_content="#### 默认带docker"
-            echo -e "\n$extra_content" >> ${{ github.workspace }}/router-info.md
-          else
-            echo -e "\n#### 不带docker" >> ${{ github.workspace }}/router-info.md
-          fi
+          echo -e "\n#### 软件包\n${{ inputs.extra_packages }}" >> ${{ github.workspace }}/router-info.md
 
       - name: Upload ImmortWrt as release assets
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: Autobuild-x86-64
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: x86-64-${{ env.profile }}
           body_path: ${{ github.workspace }}/router-info.md
           files: |
             ${{ github.workspace }}/bin/targets/x86/64/*squashfs-combined-efi.img.gz
