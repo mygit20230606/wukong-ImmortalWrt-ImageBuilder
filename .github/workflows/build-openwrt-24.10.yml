@@ -1,0 +1,124 @@
+# 官方 OpenWrt 24.10.8 ImageBuilder 构建工作流
+# 支持机型：
+#   cmcc_rax3000m —— 中国移动 RAX3000M（mediatek/filogic）
+#   x86-64        —— Generic x86/64
+# 说明：官方镜像的 imagebuilder 解压在 /builder（工作目录 /builder），
+#       与 ImmortalWrt 镜像的 /home/build/immortalwrt 不同，故使用 openwrt-24.10/build.sh
+
+name: Build OpenWrt 24.10.8
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "请选择设备"
+        required: true
+        type: choice
+        default: cmcc_rax3000m
+        options:
+          - cmcc_rax3000m
+          - x86-64
+      rootfs_size:
+        description: "Rootfs 分区大小 (仅 x86-64 生效)"
+        required: true
+        type: choice
+        default: "2G"
+        options:
+          - "1G"
+          - "2G"
+          - "3G"
+          - "4G"
+      include_docker:
+        description: |
+          是否编译 Docker 插件
+        required: true
+        default: "yes"
+        type: choice
+        options:
+          - "yes"
+          - "no"
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set executable permissions
+        run: |
+          chmod +x ${{ github.workspace }}/openwrt-24.10/build.sh
+
+      - name: Build OpenWrt 24.10.8
+        run: |
+          device="${{ github.event.inputs.device }}"
+          echo "Building for device: $device"
+
+          rootfs_size=""
+          case "$device" in
+              cmcc_rax3000m)
+                  tag=mediatek-filogic-24.10.8
+                  profile=cmcc_rax3000m
+                  echo "platform=mediatek/filogic" >> $GITHUB_ENV
+                  ;;
+              x86-64)
+                  tag=x86-64-24.10.8
+                  profile=generic
+                  echo "platform=x86/64" >> $GITHUB_ENV
+                  # 分区大小单位换算为 MB
+                  case "${{ github.event.inputs.rootfs_size }}" in
+                      1G) rootfs_size=1024 ;;
+                      2G) rootfs_size=2048 ;;
+                      3G) rootfs_size=3072 ;;
+                      4G) rootfs_size=4096 ;;
+                      *)  rootfs_size=2048 ;;
+                  esac
+                  ;;
+              *)
+                  echo "Error: unsupported device: $device"
+                  exit 1
+                  ;;
+          esac
+
+          echo "tag=$tag, profile=$profile, rootfs_size=$rootfs_size"
+
+          # release 标签 = 设备 + 时间戳, 避免同一天多次编译互相覆盖
+          echo "RELEASE_TAG=$device-$(TZ=Asia/Shanghai date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+          echo "profile=$profile" >> $GITHUB_ENV
+
+          docker run --rm -i \
+            --user root \
+            -v "${{ github.workspace }}/bin:/builder/bin" \
+            -v "${{ github.workspace }}/files:/builder/files" \
+            -v "${{ github.workspace }}/openwrt-24.10/build.sh:/builder/build.sh" \
+            -e PROFILE=$profile \
+            -e ROOTFS_SIZE=$rootfs_size \
+            -e INCLUDE_DOCKER=${{ inputs.include_docker }} \
+          openwrt/imagebuilder:$tag /bin/bash /builder/build.sh
+
+      - name: Create info
+        run: |
+          cat > ${{ github.workspace }}/router-info.md <<EOF
+          ## 📡 路由器后台信息
+          <a href="https://wkdaily.cpolar.cn/archives/1">
+           <img src="https://img.shields.io/badge/若下载慢可套用国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge"/>
+          </a>
+
+          - 👤 **用户名**: root
+          - 🔑 **密码**: 无
+          EOF
+
+          echo -e "\n#### 软件包\n$(cat ${{ github.workspace }}/bin/final-packages.txt)" >> ${{ github.workspace }}/router-info.md
+
+      - name: Upload OpenWrt as release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.profile }}
+          body_path: ${{ github.workspace }}/router-info.md
+          files: |
+            ${{ github.workspace }}/bin/targets/${{ env.platform }}/*
+          token: ${{ secrets.GITHUB_TOKEN }}
