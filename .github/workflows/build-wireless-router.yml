@@ -626,7 +626,7 @@ jobs:
                   else
                       # 默认分支
                       #tag=mediatek-filogic-openwrt-24.10.6
-                      tag=mediatek-filogic-openwrt-24.10-SNAPSHOT
+                      tag=mediatek-filogic-24.10-SNAPSHOT
                   fi
                   ;;
             esac
